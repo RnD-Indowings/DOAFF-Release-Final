@@ -1,0 +1,13 @@
+train: ../train/images
+val: ../valid/images
+test: ../test/images
+
+nc: 1
+names: ['a-blast']
+
+roboflow:
+  workspace: udits-workspace-7donp
+  project: blast-detection-artillery
+  version: 7
+  license: CC BY 4.0
+  url: https://universe.roboflow.com/udits-workspace-7donp/blast-detection-artillery/dataset/7
