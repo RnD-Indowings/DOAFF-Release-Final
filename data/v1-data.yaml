@@ -3,7 +3,7 @@ val: ../valid/images
 test: ../test/images
 
 nc: 1
-names: ['a-blast']
+names: ["a-blast"]
 
 roboflow:
   workspace: udits-workspace-7donp
