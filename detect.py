@@ -248,12 +248,12 @@ def run(
                 # Print results
                 for c in det[:, 5].unique():
                     n = (det[:, 5] == c).sum()  # detections per class
-                    s += f"{n} {names.get(int(c),'unknown')}{'s' * (n > 1)}, "  # add to string
+                    s += f"{n} {names.get(int(c), 'unknown')}{'s' * (n > 1)}, "  # add to string
 
                 # Write results
                 for *xyxy, conf, cls in reversed(det):
                     c = int(cls)  # integer class
-                    label = names.get(c,'unknown') if hide_conf else f"{names[c]}"
+                    label = names.get(c, "unknown") if hide_conf else f"{names[c]}"
                     confidence = float(conf)
                     confidence_str = f"{confidence:.2f}"
 
@@ -366,7 +366,12 @@ def parse_opt():
     """
     parser = argparse.ArgumentParser()
     parser.add_argument("--weights", nargs="+", type=str, default=ROOT / "v1.pt", help="model path or triton URL")
-    parser.add_argument("--source", type=str, default="/home/nisha-/yolov5_artillary-testing/testing.mp4", help="file/dir/URL/glob/screen/0(webcam)")
+    parser.add_argument(
+        "--source",
+        type=str,
+        default="/home/nisha-/yolov5_artillary-testing/testing.mp4",
+        help="file/dir/URL/glob/screen/0(webcam)",
+    )
     parser.add_argument("--data", type=str, default=ROOT / "data/v1-data.yaml", help="(optional) dataset.yaml path")
     parser.add_argument("--imgsz", "--img", "--img-size", nargs="+", type=int, default=[640], help="inference size h,w")
     parser.add_argument("--conf-thres", type=float, default=0.25, help="confidence threshold")
