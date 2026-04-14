@@ -469,22 +469,9 @@ Get started quickly with our pre-configured environments. Click the icons below 
     <img src="https://github.com/ultralytics/assets/releases/download/v0.0.0/logo-gcp-small.png" width="10%" /></a>
 </div>
 
-## 🤝 Contribute
-
-We welcome your contributions! Making YOLOv5 accessible and effective is a community effort. Please see our [Contributing Guide](https://docs.ultralytics.com/help/contributing/) to get started. Share your feedback through the [YOLOv5 Survey](https://www.ultralytics.com/survey?utm_source=github&utm_medium=social&utm_campaign=Survey). Thank you to all our contributors for making YOLOv5 better!
-
-[![Ultralytics open-source contributors](https://raw.githubusercontent.com/ultralytics/assets/main/im/image-contributors.png)](https://github.com/ultralytics/yolov5/graphs/contributors)
-
-## 📜 License
-
-Ultralytics provides two licensing options to meet different needs:
-
-- **AGPL-3.0 License**: An [OSI-approved](https://opensource.org/license/agpl-v3) open-source license ideal for academic research, personal projects, and testing. It promotes open collaboration and knowledge sharing. See the [LICENSE](https://github.com/ultralytics/yolov5/blob/master/LICENSE) file for details.
-- **Enterprise License**: Tailored for commercial applications, this license allows seamless integration of Ultralytics software and AI models into commercial products and services, bypassing the open-source requirements of AGPL-3.0. For commercial use cases, please contact us via [Ultralytics Licensing](https://www.ultralytics.com/license).
-
 ## 📧 Contact
 
-For bug reports and feature requests related to YOLOv5, please visit [GitHub Issues](https://github.com/ultralytics/yolov5/issues). For general questions, discussions, and community support, join our [Discord server](https://discord.com/invite/ultralytics)!
+For bug reports and feature requests related to YOLOv5-DOAFF, contact Indowings
 
 <br>
 <div align="center">
