@@ -1,20 +1,17 @@
-#pre-final-artillery-detection.py
+# pre-final-artillery-detection.py
 
 import argparse
-import csv
-import os
-import platform
-import sys
 import math
+import os
+import sys
 import time
 from pathlib import Path
-import torch
-import numpy as np
+
 import cv2
-from math import radians, cos, sin, sqrt, atan2, asin, degrees
-from dronekit import connect, VehicleMode, LocationGlobalRelative
-from pymavlink import mavutil
+import numpy as np
 import rasterio
+import torch
+from dronekit import connect
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[0]
@@ -22,17 +19,25 @@ if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))
 
-from ultralytics.utils.plotting import Annotator, colors, save_one_box
+import logging
+
+from ultralytics.utils.plotting import Annotator, colors
 
 from models.common import DetectMultiBackend
 from utils.dataloaders import IMG_FORMATS, VID_FORMATS, LoadImages, LoadScreenshots, LoadStreams
 from utils.general import (
-    LOGGER, Profile, check_file, check_img_size, check_imshow,
-    check_requirements, colorstr, increment_path, non_max_suppression,
-    print_args, scale_boxes, strip_optimizer, xyxy2xywh
+    LOGGER,
+    Profile,
+    check_file,
+    check_img_size,
+    check_imshow,
+    increment_path,
+    non_max_suppression,
+    print_args,
+    scale_boxes,
+    strip_optimizer,
 )
 from utils.torch_utils import select_device, smart_inference_mode
-import logging
 
 LOG_FILE = "/home/nisha-/agra_demo/result_afd-u.txt"
 logger = logging.getLogger("backend_logger")
@@ -42,11 +47,13 @@ file_handler.setFormatter(logging.Formatter("%(asctime)s - %(message)s"))
 logger.addHandler(file_handler)
 logger.info("anything")
 
+
 def connect_vehicle(connection_str: str):
     logger.info(f"[INFO] Connecting to vehicle at {connection_str}...")
     vehicle = connect(connection_str, wait_ready=False)
     logger.info("[INFO] Connected successfully\n")
     return vehicle
+
 
 # =========================================================
 # CAMERA PARAMETERS
@@ -63,10 +70,12 @@ image_height = 720
 DEM_PATH = "/home/nisha-/Downloads/rasters_SRTM15Plus/output_SRTM15Plus.tif"
 dem_src = rasterio.open(DEM_PATH)
 
+
 def get_elevation(lat, lon):
     try:
-        if not (dem_src.bounds.left <= lon <= dem_src.bounds.right and
-                dem_src.bounds.bottom <= lat <= dem_src.bounds.top):
+        if not (
+            dem_src.bounds.left <= lon <= dem_src.bounds.right and dem_src.bounds.bottom <= lat <= dem_src.bounds.top
+        ):
             return None
 
         for val in dem_src.sample([(lon, lat)]):
@@ -76,6 +85,7 @@ def get_elevation(lat, lon):
     except Exception as e:
         print("DEM error:", e)
         return None
+
 
 @smart_inference_mode()
 def run(
@@ -113,11 +123,10 @@ def run(
     half=False,
     dnn=False,
     vid_stride=1,
-    
 ):
-    
+
     source = str(source)
-    save_img = not nosave and not source.endswith(".txt")
+    not nosave and not source.endswith(".txt")
     is_file = Path(source).suffix[1:] in (IMG_FORMATS + VID_FORMATS)
     is_url = source.lower().startswith(("rtsp://", "rtmp://", "http://", "https://"))
     webcam = source.isnumeric() or source.endswith(".streams") or (is_url and not is_file)
@@ -144,23 +153,21 @@ def run(
         dataset = LoadScreenshots(source, img_size=imgsz, stride=stride, auto=pt)
     else:
         dataset = LoadImages(source, img_size=imgsz, stride=stride, auto=pt, vid_stride=vid_stride)
-    vid_path, vid_writer = [None] * bs, [None] * bs
+    _vid_path, _vid_writer = [None] * bs, [None] * bs
     model.warmup(imgsz=(1, 3, *imgsz))
-    seen, windows, dt = 0, [], (Profile(device=device), Profile(device=device), Profile(device=device))
-    
+    seen, _windows, dt = 0, [], (Profile(device=device), Profile(device=device), Profile(device=device))
+
     # ---------- MANUAL GEO INPUT ----------
-    #drone_lat  = 28.60468
-    #drone_lon  = 77.368759
-    #center_lat = 28.60490
-    #center_lon = 77.368900
-    
+    # drone_lat  = 28.60468
+    # drone_lon  = 77.368759
+    # center_lat = 28.60490
+    # center_lon = 77.368900
+
     last_print_time = 0
     data_buffer = []
-    print_count = 0       # counts how many times output has been printed
-    paused = False        # pause flag
-    z_ground = None       # holds last known ground elevation for display
+    print_count = 0  # counts how many times output has been printed
+    paused = False  # pause flag
     for path, im, im0s, vid_cap, s in dataset:
-        
         # ---------- PREPROCESS ----------
         with dt[0]:
             im = torch.from_numpy(im).to(model.device)
@@ -190,60 +197,50 @@ def run(
             # FIX 1: Use actual frame dimensions instead of hardcoded values
             center_x = w // 2
             center_y = h // 2
-            
+
             # Draw center crosshair — bold and clear
             # Black outline for contrast
             cv2.drawMarker(
-                im0,
-                (center_x, center_y),
-                (0, 0, 0),
-                markerType=cv2.MARKER_CROSS,
-                markerSize=60,
-                thickness=6
+                im0, (center_x, center_y), (0, 0, 0), markerType=cv2.MARKER_CROSS, markerSize=60, thickness=6
             )
             # Bright green inner cross
             cv2.drawMarker(
-                im0,
-                (center_x, center_y),
-                (0, 255, 0),
-                markerType=cv2.MARKER_CROSS,
-                markerSize=60,
-                thickness=3
+                im0, (center_x, center_y), (0, 255, 0), markerType=cv2.MARKER_CROSS, markerSize=60, thickness=3
             )
             # Center dot for precision
             cv2.circle(im0, (center_x, center_y), 5, (0, 0, 0), -1)
             cv2.circle(im0, (center_x, center_y), 3, (0, 255, 0), -1)
 
             # ================= TELEMETRY =================
-            #try:
-                #lat_A = vehicle.location.global_frame.lat
-                #lon_A = vehicle.location.global_frame.lon
-                #altitude_a = vehicle.location.global_frame.alt
-                #altitude_m = vehicle.location.global_relative_frame.alt
-                #if vehicle.gimbal.pitch is not None:
-                    #pitch_deg = vehicle.gimbal.pitch
-                #else:
-                    #pitch_deg = math.degrees(vehicle.attitude.pitch)
-            #except Exception as e:
-                #print("Telemetry read failed:", e)
-                #continue
-            #pitch_rad = math.radians(pitch_deg)
-            
+            # try:
+            # lat_A = vehicle.location.global_frame.lat
+            # lon_A = vehicle.location.global_frame.lon
+            # altitude_a = vehicle.location.global_frame.alt
+            # altitude_m = vehicle.location.global_relative_frame.alt
+            # if vehicle.gimbal.pitch is not None:
+            # pitch_deg = vehicle.gimbal.pitch
+            # else:
+            # pitch_deg = math.degrees(vehicle.attitude.pitch)
+            # except Exception as e:
+            # print("Telemetry read failed:", e)
+            # continue
+            # pitch_rad = math.radians(pitch_deg)
+
             # ================= TELEMETRY =================
             try:
-                #drone_lat = vehicle.location.global_frame.lat
-                #drone_lon = vehicle.location.global_frame.lon
+                # drone_lat = vehicle.location.global_frame.lat
+                # drone_lon = vehicle.location.global_frame.lon
                 drone_lat = 28.7736
                 drone_lon = 77.14825
-                
+
                 # Absolute altitude (AMSL) — only for display
                 altitude_abs = vehicle.location.global_frame.alt
 
                 # Relative altitude (AGL/home) — used in calculations
-                #altitude_m = vehicle.location.global_relative_frame.alt
+                # altitude_m = vehicle.location.global_relative_frame.alt
                 altitude_m = 10
                 logger.info(f"altitude: {altitude_m}")
-                
+
                 # ----- PRINT VALUES -----
                 if altitude_abs is not None:
                     logger.info(f"Global Altitude (AMSL): {altitude_abs:.2f} m")
@@ -255,21 +252,21 @@ def run(
             except Exception as e:
                 logger.error(f"Telemetry read failed: {e}")
                 continue
-    
+
             # ================= CAMERA GEOMETRY =================
             hfov_rad = 2 * math.atan(sensor_width_mm / (2 * focal_length_mm))
             vfov_rad = 2 * math.atan(sensor_height_mm / (2 * focal_length_mm))
             logger.info(f"hfov_rad: {hfov_rad:.6f}, vfov_rad: {vfov_rad:.6f}")
 
-            #L = altitude_m / max(math.cos(pitch_rad), 0.001)
+            # L = altitude_m / max(math.cos(pitch_rad), 0.001)
             # distance between drone GPS and frame center GPS
             # ================= SLANT DISTANCE =================
-            #dlat = center_lat - drone_lat
-            #dlon = center_lon - drone_lon
-            #horizontal = math.sqrt(dlat*dlat + dlon*dlon) * 1.113195e5
-            #L = math.sqrt(horizontal**2 + altitude_m**2)
-            #print(f"Slant_distance: {L:.3f}")
-            
+            # dlat = center_lat - drone_lat
+            # dlon = center_lon - drone_lon
+            # horizontal = math.sqrt(dlat*dlat + dlon*dlon) * 1.113195e5
+            # L = math.sqrt(horizontal**2 + altitude_m**2)
+            # print(f"Slant_distance: {L:.3f}")
+
             # Difference in coordinates
             dlat = center_lat - drone_lat
             dlon = center_lon - drone_lon
@@ -277,7 +274,7 @@ def run(
             # Convert degree difference → meters
             dy = dlat * 111320
             dx = dlon * 111320 * math.cos(math.radians(center_lat))
-            
+
             # Ground distance between drone ground point and frame center
             horizontal = math.sqrt(dx**2 + dy**2)
 
@@ -295,7 +292,9 @@ def run(
             if len(det) and not paused:
                 # DEBUG: print all detected class indices and names
                 detected_classes = det[:, 5].unique().tolist()
-                print(f"[DEBUG] Raw detections: {len(det)} | Classes found: {[names[int(c)] for c in detected_classes]}")
+                print(
+                    f"[DEBUG] Raw detections: {len(det)} | Classes found: {[names[int(c)] for c in detected_classes]}"
+                )
 
                 # Removed wrong class filter (was filtering class 0 = 'person' from COCO)
                 # Now detects all classes from v2.pt model
@@ -309,11 +308,11 @@ def run(
                     cy = (y1 + y2) // 2
 
                     # draw bbox center
-                    cv2.circle(im0, (cx, cy), 5, (0,0,255), -1)
+                    cv2.circle(im0, (cx, cy), 5, (0, 0, 255), -1)
 
                     # ---------- OFFSET FROM FRAME CENTER ----------
-                    dx_px = cx - center_x      # RIGHT = +
-                    dy_px = center_y - cy      # UP = +
+                    dx_px = cx - center_x  # RIGHT = +
+                    dy_px = center_y - cy  # UP = +
 
                     logger.info(f"dx_px: {dx_px:.6f}, dy_px: {dy_px:.6f}")
 
@@ -342,28 +341,31 @@ def run(
                     lat_B = center_lat + delta_lat
                     lon_B = center_lon + delta_lon
                     logger.info(f"lat_B: {lat_B:.6f}, lon_B: {lon_B:.6f}")
-                    #print(f"Distance: {distance_m:.2f} m")
+                    # print(f"Distance: {distance_m:.2f} m")
                     logger.info(f"final_lat,final_lon: {lat_B:.6f}, {lon_B:.6f}")
-                    #print(f"altitude")
+                    # print(f"altitude")
 
                     current_time = time.time()
                     if current_time - last_print_time >= 1.0:
-                        data_buffer.append({
-                            "drone_lat": drone_lat,
-                            "drone_lon": drone_lon,
-                            "center_lat": center_lat,
-                            "center_lon": center_lon,
-                            "alt": altitude_m,
-                            "lat_b": lat_B,
-                            "lon_b": lon_B,
-                            "dist": distance_m,
-                            "dx": dx_m,
-                            "dy": dy_m
-                        })
+                        data_buffer.append(
+                            {
+                                "drone_lat": drone_lat,
+                                "drone_lon": drone_lon,
+                                "center_lat": center_lat,
+                                "center_lon": center_lon,
+                                "alt": altitude_m,
+                                "lat_b": lat_B,
+                                "lon_b": lon_B,
+                                "dist": distance_m,
+                                "dx": dx_m,
+                                "dy": dy_m,
+                            }
+                        )
 
                         if len(data_buffer) >= 5:
 
-                            avg = lambda key: sum(d[key] for d in data_buffer) / len(data_buffer)
+                            def avg(key):
+                                return sum(d[key] for d in data_buffer) / len(data_buffer)
 
                             avg_drone_lat = avg("drone_lat")
                             avg_drone_lon = avg("drone_lon")
@@ -407,7 +409,7 @@ def run(
                                 f"{abs(avg_dy):.2f} m {dir_y} | "
                                 f"Z Center: {z_center_str} | "
                                 f"Z Target: {z_target_str} | "
-                                f"Z Offset: {z_offset_str}\n" + "-"*120
+                                f"Z Offset: {z_offset_str}\n" + "-" * 120
                             )
 
                             data_buffer.clear()
@@ -418,9 +420,9 @@ def run(
                             # after every 2 prints (= 10 bbox detections), pause
                             if print_count % 2 == 0:
                                 paused = True
-                                print("\n" + "="*60)
+                                print("\n" + "=" * 60)
                                 print("  10 Frames Calculated — Press R to Resume Detection")
-                                print("="*60 + "\n")
+                                print("=" * 60 + "\n")
 
                         last_print_time = current_time
 
@@ -443,15 +445,29 @@ def run(
                     overlay = display_frame.copy()
                     cv2.rectangle(overlay, (900, 610), (1280, 720), (0, 165, 255), -1)
                     cv2.addWeighted(overlay, 0.7, display_frame, 0.3, 0, display_frame)
-                    cv2.putText(display_frame, "10 Frames Calculated",
-                                (910, 663), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (255, 255, 255), 2)
-                    cv2.putText(display_frame, "Press R to Resume",
-                                (910, 700), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (255, 255, 255), 2)
+                    cv2.putText(
+                        display_frame,
+                        "10 Frames Calculated",
+                        (910, 663),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        0.65,
+                        (255, 255, 255),
+                        2,
+                    )
+                    cv2.putText(
+                        display_frame,
+                        "Press R to Resume",
+                        (910, 700),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        0.65,
+                        (255, 255, 255),
+                        2,
+                    )
 
                 # imshow and waitKey always called — video never freezes
                 cv2.imshow(str(p), display_frame)
                 key = cv2.waitKey(1) & 0xFF
-                if paused and (key == ord('r') or key == ord('R')):
+                if paused and (key == ord("r") or key == ord("R")):
                     paused = False
                     print("[INFO] Resuming detection...")
 
@@ -460,18 +476,21 @@ def run(
     if update:
         strip_optimizer(weights[0])
 
+
 def parse_opt():
-    
+
     parser = argparse.ArgumentParser()
     parser.add_argument("--weights", nargs="+", type=str, default=ROOT / "v2.pt", help="model path or triton URL")
-    parser.add_argument("--source", type=str, default="/home/nisha-/yolov5_doaff/trail.mp4", help="file/dir/URL/glob/screen/0(webcam)")
+    parser.add_argument(
+        "--source", type=str, default="/home/nisha-/yolov5_doaff/trail.mp4", help="file/dir/URL/glob/screen/0(webcam)"
+    )
     parser.add_argument("--data", type=str, default=ROOT / "data_v2.yaml", help="(optional) dataset.yaml path")
     parser.add_argument("--imgsz", "--img", "--img-size", nargs="+", type=int, default=[640], help="inference size h,w")
     parser.add_argument("--conf-thres", type=float, default=0.25, help="confidence threshold")
     parser.add_argument("--iou-thres", type=float, default=0.45, help="NMS IoU threshold")
     parser.add_argument("--max-det", type=int, default=1000, help="maximum detections per image")
     parser.add_argument("--device", default="", help="cuda device, i.e. 0 or 0,1,2,3 or cpu")
-    #parser.add_argument("--view-img", action="store_true", help="show results")
+    # parser.add_argument("--view-img", action="store_true", help="show results")
     parser.add_argument("--view-img", action="store_true", default=True, help="show results")
     parser.add_argument("--save-txt", action="store_true", help="save results to *.txt")
     parser.add_argument(
@@ -503,11 +522,12 @@ def parse_opt():
     print_args(vars(opt))
     return opt
 
+
 def start_with_coordinates(center_lat, center_lon):
 
     connection_string = "127.0.0.1:14551"
     vehicle = connect_vehicle(connection_string)
-    
+
     # ---------- GET DRONE POSITION FROM TELEMETRY ----------
     drone_lat = 28.7736
     drone_lon = 77.14825
@@ -520,12 +540,12 @@ def start_with_coordinates(center_lat, center_lon):
     logger.info(f"center_lon: {center_lon}")
 
     run(
-    drone_lat=drone_lat,
-    drone_lon=drone_lon,
-    center_lat=center_lat,
-    center_lon=center_lon,
-    vehicle=vehicle,
-    **vars(opt)
+        drone_lat=drone_lat,
+        drone_lon=drone_lon,
+        center_lat=center_lat,
+        center_lon=center_lon,
+        vehicle=vehicle,
+        **vars(opt),
     )
 
 
