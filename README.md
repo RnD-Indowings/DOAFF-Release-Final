@@ -491,4 +491,15 @@ For bug reports and feature requests related to YOLOv5-DOAFF, contact Indowings
 </div>
 =======
 
+--------------------------------------------------------------------------------------------------
+
+👨‍💻 Maintainer
+```bash
+Nisha Pavane
+Udit Ray
+Email: nisha.pavane@indowings.com + udit.ray@indowings.com
+Org: Indo Wings Private Limited
+Website: https://www.indowings.com
+
+
 
