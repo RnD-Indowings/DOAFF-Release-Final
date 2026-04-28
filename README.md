@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+
 <div align="center">
   <p>
     <a href="https://platform.ultralytics.com/?utm_source=github&utm_medium=referral&utm_campaign=platform_launch&utm_content=banner&utm_term=ultralytics_github" target="_blank">
@@ -19,7 +20,6 @@
   <br>
 
 # DOAFF Ultralytics YOLOv5 🚀 is a cutting-edge, state-of-the-art (SOTA) computer vision model developed by IndoWings. Based on the [PyTorch](https://pytorch.org/) framework, YOLOv5 is renowned for its ease of use, speed, and accuracy. It incorporates insights and best practices from extensive research and development, making it a popular choice for artillery-blast detection tasks.
-
 
 <div align="center">
   <a href="https://github.com/ultralytics"><img src="https://github.com/ultralytics/assets/raw/main/social/logo-social-github.png" width="2%" alt="Ultralytics GitHub"></a>
@@ -491,9 +491,10 @@ For bug reports and feature requests related to YOLOv5-DOAFF, contact Indowings
 </div>
 =======
 
---------------------------------------------------------------------------------------------------
+---
 
 👨‍💻 Maintainer
+
 ```bash
 Nisha Pavane
 Udit Ray
@@ -503,3 +504,4 @@ Website: https://www.indowings.com
 
 
 
+```
